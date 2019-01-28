@@ -1,0 +1,25 @@
+{
+  "name": "api-controller",
+  "version": "1.0.0",
+  "description": "Abstract class to use as parent in other controllers",
+  "main": "lib/ApiController.js",
+  "author": "jonathan diego rodriguez &lt;jonathan@bquate.com&gt;",
+  "license": "",
+  "scripts": {
+    "init": "npm i && npm run build && npm run doc",
+    "start": "nodemon --exec babel-node main.js",
+    "build": "babel -d lib src",
+    "test": "mocha",
+    "doc": "jsdoc ./src -d documentation -c .jsdoc -r"
+  },
+  "bin": {},
+  "dependencies": {},
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-add-module-exports": "^1.0.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "nodemon": "^1.18.4",
+    "jsdoc": "^3.5.5"
+  }
+}
