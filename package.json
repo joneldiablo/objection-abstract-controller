@@ -1,6 +1,6 @@
 {
   "name": "abstract-controller",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Abstract class to use as parent in other controllers",
   "main": "lib/ApiController.js",
   "author": "jonathan diego rodriguez &lt;jonathan@bquate.com&gt;",
@@ -13,7 +13,9 @@
     "doc": "jsdoc ./src -d documentation -c .jsdoc -r"
   },
   "bin": {},
-  "dependencies": {},
+  "dependencies": {
+    "flat": "^4.1.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-plugin-add-module-exports": "^1.0.0",
