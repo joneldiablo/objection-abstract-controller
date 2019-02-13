@@ -1,3 +1,6 @@
+// lib to convert "{'q.column':value}" to "{q:{column:value}}"
+const unflatten = require('flat').unflatten;
+
 /**
  * Model class which extends from ObjectionJS Model. 
  * Instance generated using **`Model.query()`**
@@ -10,11 +13,11 @@
  * @description All controllers must extends from this class.
  * @author Jonathan Diego Rodríguez Rdz. <jonathan@bquate.com>
  * @param {Class} Model - model class to use,
- * this param is required and must be a **ObjectionJS Model class**.
+ * this param is required and must be an **ObjectionJS Model class**.
  * @param {string[]} [qcolumns=[]] - Query columns: array of column names
  * to use as the searchable columns, 
  * the Model must have **`Model.jsonSchema.search`** array 
- * but could rewrite it with this parameter 
+ * but could be rewrited with this parameter 
  * (the **`Model.jsonSchema.search`** its a custom variable).
  */
 class ApiController {
@@ -29,7 +32,7 @@ class ApiController {
   constructor(Model, qcolumns = []) {
     let c = this;
     c.Model = Model;
-    c.qcolumns = Model.jsonSchema.search || qcolumns;
+    c.qcolumns = (Model.jsonSchema || {}).search || qcolumns;
   }
 
   /**
@@ -47,27 +50,44 @@ class ApiController {
    */
   get(req, res, next, modelObject, promise) {
     let c = this;
+    req.query = unflatten(req.query);
 
-    //pagination
+    // pagination
     let limit = parseInt(req.query.limit || 20);
     let offset = parseInt(req.query.offset || (req.query.page || 0) * req.query.limit);
+    let page = req.query.page || Math.trunc(offset / limit) || 0;
+    // fields or columns to return by row
     let fieldsReq = typeof req.query.fields === 'string';
+    let queryByColumns = typeof req.query.q === 'object';
     let fields = new Set();
+
     if (fieldsReq) {
       fieldsReq = req.query.fields.split(',');
-      fieldsReq.forEach(f => fields.add(f));
+      fieldsReq.forEach(f => fields.add(f.trim()));
     }
+
+    if (queryByColumns) {
+      Object.keys(req.query.q).forEach(f => fields.add(f));
+    }
+
     if (req.query.q || !fieldsReq) {
       c.qcolumns.forEach(f => fields.add(f));
     }
 
     if (!modelObject) {
-      modelObject = c.Model.query().select('id', Array.from(fields));
+      if (!fields.size) {
+        fields.add('*');
+      } else {
+        fields.add('id');
+      }
+      let finalFields = Array.from(fields);
+      modelObject = c.Model.query().select(finalFields);
       //clear any search
       //modelObject.clear(/.*/).clearSelect().select('id', ...c.qcolumns);
     }
-    //omni search
-    if (req.query.q) {
+
+    // omni search
+    if (typeof req.query.q === 'string') {
       let query = req.query.q;
       let columns = c.qcolumns.slice(0);
       let firstColumn = columns.pop();
@@ -89,15 +109,24 @@ class ApiController {
       // set order string builded
       modelObject.orderByRaw(order.join(', '));
     }
-    //FIX: use .page() from objection, generate all of this code, and do only one call
+
+    // search by column
+    if (queryByColumns) {
+      modelObject.where(builder => {
+        Object.keys(req.query.q).forEach(col => {
+          builder.where(col, 'like', `%${req.query.q[col]}%`);
+        });
+      });
+    }
+
     //get data with pagination
-    let response = Promise.all([modelObject.resultSize(), modelObject.offset(offset).limit(limit)])
+    let response = modelObject.page(page, limit)
       .then(resp => ({
-        total: resp[0],
-        data: resp[1],
+        total: resp.total,
+        data: resp.results,
         limit: limit,
         offset: offset || 0,
-        page: Math.trunc(offset / limit) || 0
+        page: page
       }))
     if (promise) {
       return response;
@@ -324,7 +353,7 @@ class ApiController {
    * @param {Object} resp - Error data response 
    * @param {Number} [status=500] - The status code with which will respond the request
    */
-  catch (res, resp, status = 500) {
+  catch(res, resp, status = 500) {
     console.log('Error: ', resp);
     let response = {
       status: resp.statusCode || status,
