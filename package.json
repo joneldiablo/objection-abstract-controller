@@ -1,6 +1,6 @@
 {
   "name": "abstract-controller",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Abstract class to use as parent in other controllers",
   "main": "lib/ApiController.js",
   "author": "jonathan diego rodriguez &lt;jonathan@bquate.com&gt;",

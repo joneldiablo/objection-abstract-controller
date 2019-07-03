@@ -58,7 +58,7 @@ class ApiController {
     let page = req.query.page || Math.trunc(offset / limit) || 0;
     // fields or columns to return by row
     let fieldsReq = typeof req.query.fields === 'string';
-    let queryByColumns = typeof req.query.q === 'object';
+    let queryByColumns = typeof req.query.filters === 'object';
     let fields = new Set();
 
     if (fieldsReq) {
@@ -67,7 +67,7 @@ class ApiController {
     }
 
     if (queryByColumns) {
-      Object.keys(req.query.q).forEach(f => fields.add(f));
+      Object.keys(req.query.filters).forEach(f => fields.add(f));
     }
 
     if (req.query.q || !fieldsReq) {
@@ -113,8 +113,12 @@ class ApiController {
     // search by column
     if (queryByColumns) {
       modelObject.where(builder => {
-        Object.keys(req.query.q).forEach(col => {
-          builder.where(col, 'like', `%${req.query.q[col]}%`);
+        Object.keys(req.query.filters).forEach(col => {
+          if (parseInt(req.query.filters[col])) {
+            builder.where(col, parseInt(req.query.filters[col]));
+          } else {
+            builder.where(col, 'like', '%' + req.query.filters[col] + '%');
+          }
         });
       });
     }
