@@ -14,7 +14,7 @@
   },
   "bin": {},
   "dependencies": {
-    "flat": "^4.1.0"
+    "flat": "^5.0.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
